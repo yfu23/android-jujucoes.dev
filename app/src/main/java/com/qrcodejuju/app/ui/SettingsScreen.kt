@@ -66,7 +66,13 @@ fun SettingsScreen(
                 else "Not synced yet",
                 style = MaterialTheme.typography.bodySmall,
             )
-            OutlinedButton({ vm.syncNow() }, enabled = !busy) { Text("Sync now") }
+            OutlinedButton({ vm.syncNow() }, enabled = !busy && !vm.syncing) {
+                if (vm.syncing) {
+                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Spacer(Modifier.width(8.dp))
+                }
+                Text(if (vm.syncing) "Syncing…" else "Sync now")
+            }
 
             HorizontalDivider()
             Text("Other devices", style = MaterialTheme.typography.titleMedium)

@@ -9,6 +9,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessHigh
+import androidx.compose.material.icons.filled.BrightnessLow
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material3.*
@@ -52,11 +54,13 @@ fun ScanScreen(
 
     var scanned by remember { mutableStateOf<Scanned?>(null) }
     var torch by remember { mutableStateOf(false) }
+    var brightBoost by remember { mutableStateOf(false) }
     var camera by remember { mutableStateOf<Camera?>(null) }
     val lifecycleOwner = LocalLifecycleOwner.current
     val executor = remember { Executors.newSingleThreadExecutor() }
     val scanner = remember { BarcodeScanning.getClient() }
     DisposableEffect(Unit) { onDispose { scanner.close(); executor.shutdown() } }
+    KeepScreenBright(brightBoost)
 
     Box(modifier.fillMaxSize()) {
         AndroidView(
@@ -87,12 +91,22 @@ fun ScanScreen(
                 previewView
             },
         )
-        if (camera?.cameraInfo?.hasFlashUnit() == true) {
-            FilledIconToggleButton(
-                checked = torch,
-                onCheckedChange = { torch = it; camera?.cameraControl?.enableTorch(it) },
-                modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
-            ) { Icon(if (torch) Icons.Default.FlashOn else Icons.Default.FlashOff, "Flashlight") }
+        Column(
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilledIconToggleButton(checked = brightBoost, onCheckedChange = { brightBoost = it }) {
+                Icon(
+                    if (brightBoost) Icons.Default.BrightnessHigh else Icons.Default.BrightnessLow,
+                    "Boost screen brightness",
+                )
+            }
+            if (camera?.cameraInfo?.hasFlashUnit() == true) {
+                FilledIconToggleButton(
+                    checked = torch,
+                    onCheckedChange = { torch = it; camera?.cameraControl?.enableTorch(it) },
+                ) { Icon(if (torch) Icons.Default.FlashOn else Icons.Default.FlashOff, "Flashlight") }
+            }
         }
     }
 

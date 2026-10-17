@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessHigh
+import androidx.compose.material.icons.filled.BrightnessLow
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,6 +33,7 @@ fun CreateScreen(onSave: (name: String, text: String, format: String) -> Unit, m
     var text by rememberSaveable { mutableStateOf("") }
     var formatIndex by rememberSaveable { mutableIntStateOf(0) }
     var menuOpen by remember { mutableStateOf(false) }
+    var brightBoost by remember { mutableStateOf(false) }
     val (formatName, format) = CodeGenerator.formats[formatIndex]
     val result = remember(text, formatIndex) { CodeGenerator.generate(text, format) }
     var imageError by remember { mutableStateOf<String?>(null) }
@@ -69,12 +72,19 @@ fun CreateScreen(onSave: (name: String, text: String, format: String) -> Unit, m
         }
 
         val bmp = result.getOrNull()
+        KeepScreenBright(brightBoost && bmp != null)
         if (bmp != null) {
             Image(bmp.asImageBitmap(), "Generated code", Modifier.fillMaxWidth(), contentScale = ContentScale.Fit)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Button({ onSave(name, text, format.name) }) { Text("Save") }
                 OutlinedButton({ shareImage(context, bmp, text) }) { Text("Share") }
                 if (isUrl(text)) OutlinedButton({ openIfUrl(context, text) }) { Text("Open link") }
+                IconToggleButton(checked = brightBoost, onCheckedChange = { brightBoost = it }) {
+                    Icon(
+                        if (brightBoost) Icons.Default.BrightnessHigh else Icons.Default.BrightnessLow,
+                        "Turn up screen brightness so this code is easier to scan",
+                    )
+                }
             }
         } else if (text.isNotEmpty()) {
             Text(result.exceptionOrNull()?.message ?: "Can't encode", color = MaterialTheme.colorScheme.error)

@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BrightnessHigh
+import androidx.compose.material.icons.filled.BrightnessLow
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -67,6 +69,9 @@ fun SavedScreen(
         val bmp = remember(code.id) { render(code) }
         var editingName by remember(code.id) { mutableStateOf(false) }
         var nameInput by remember(code.id) { mutableStateOf(code.name) }
+        var brightBoost by remember(code.id) { mutableStateOf(false) }
+        var confirmingDelete by remember(code.id) { mutableStateOf(false) }
+        KeepScreenBright(brightBoost && bmp != null)
         AlertDialog(
             onDismissRequest = { selected = null },
             title = {
@@ -93,9 +98,15 @@ fun SavedScreen(
                     Text(CodeGenerator.displayName(code.format), style = MaterialTheme.typography.bodySmall)
                     SelectionContainer { Text(code.text) }
                     Row {
-                        IconButton({ copyText(context, code.text) }) { Icon(Icons.Default.ContentCopy, "Copy") }
+                        IconButton({ confirmingDelete = true }) { Icon(Icons.Default.Delete, "Delete") }
                         if (bmp != null) IconButton({ shareImage(context, bmp, code.text) }) { Icon(Icons.Default.Share, "Share") }
-                        IconButton({ onDelete(code); selected = null }) { Icon(Icons.Default.Delete, "Delete") }
+                        IconButton({ copyText(context, code.text) }) { Icon(Icons.Default.ContentCopy, "Copy") }
+                        IconToggleButton(checked = brightBoost, onCheckedChange = { brightBoost = it }) {
+                            Icon(
+                                if (brightBoost) Icons.Default.BrightnessHigh else Icons.Default.BrightnessLow,
+                                "Turn up screen brightness so this code is easier to scan",
+                            )
+                        }
                     }
                 }
             },
@@ -108,6 +119,22 @@ fun SavedScreen(
                 }
             },
         )
+
+        if (confirmingDelete) {
+            AlertDialog(
+                onDismissRequest = { confirmingDelete = false },
+                title = { Text("Delete this code?") },
+                text = { Text("\"${code.name.ifBlank { code.text }}\" will be permanently removed. This can't be undone.") },
+                confirmButton = {
+                    TextButton({
+                        confirmingDelete = false
+                        onDelete(code)
+                        selected = null
+                    }) { Text("Delete") }
+                },
+                dismissButton = { TextButton({ confirmingDelete = false }) { Text("Cancel") } },
+            )
+        }
     }
 }
 

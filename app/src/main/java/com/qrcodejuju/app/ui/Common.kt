@@ -1,15 +1,50 @@
 package com.qrcodejuju.app.ui
 
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.view.WindowManager
 import android.widget.Toast
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.FileProvider
 import com.google.mlkit.vision.barcode.common.Barcode
 import java.io.File
+
+/** Unwraps Compose's [Context] (often a ContextWrapper) to find the hosting Activity, e.g. to reach its Window. */
+tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
+}
+
+/**
+ * While [enabled], forces this screen to full brightness -- e.g. while a code is on screen for
+ * someone else to scan, or while using the camera to scan one yourself. Always restored to
+ * "follow system" when [enabled] goes false or when the composable leaves composition, so it
+ * can never get stuck bright.
+ */
+@Composable
+fun KeepScreenBright(enabled: Boolean) {
+    val context = LocalContext.current
+    DisposableEffect(enabled) {
+        val window = context.findActivity()?.window
+        if (window != null) {
+            window.attributes = window.attributes.apply {
+                screenBrightness = if (enabled) 1f else WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+            }
+        }
+        onDispose {
+            window?.let { it.attributes = it.attributes.apply { screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE } }
+        }
+    }
+}
 
 fun copyText(context: Context, text: String) {
     val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

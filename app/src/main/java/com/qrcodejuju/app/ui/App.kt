@@ -46,6 +46,7 @@ class CodesViewModel(app: Application) : AndroidViewModel(app) {
     var syncError by mutableStateOf<String?>(null); private set
     var initialConflict by mutableStateOf<List<SavedCode>?>(null); private set
     var syncConflict by mutableStateOf<List<SavedCode>?>(null); private set
+    var syncing by mutableStateOf(false); private set
 
     private var pushJob: Job? = null
 
@@ -94,7 +95,11 @@ class CodesViewModel(app: Application) : AndroidViewModel(app) {
         handleOutcome(sync.resolveSyncConflict(choice, remote))
     }
 
-    fun syncNow() = viewModelScope.launch { handleOutcome(sync.pull()) }
+    fun syncNow() = viewModelScope.launch {
+        syncing = true
+        handleOutcome(sync.pull())
+        syncing = false
+    }
 
     fun disableDriveMode() {
         sync.disableDriveMode()
